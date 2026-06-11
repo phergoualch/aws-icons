@@ -140,14 +140,13 @@ export function App() {
 
       {index ? (
         <footer className="footer">
-          <span>
-            Official AWS Architecture Icons · released {formatDate(index.catalog.source.releaseDate)} · refreshed{" "}
-            {formatDate(index.catalog.generatedAt)}
-          </span>
-          <span>Not affiliated with or maintained by AWS · built by and for the community</span>
-          <a href={index.catalog.source.pageUrl} target="_blank" rel="noreferrer">
-            aws.amazon.com/architecture/icons
-          </a>
+          <p>
+            Built by and for the community, not affiliated with or maintained by AWS. Icons come from the{" "}
+            <a href={index.catalog.source.pageUrl} target="_blank" rel="noreferrer">
+              official AWS Architecture Icons
+            </a>{" "}
+            released {formatDate(index.catalog.source.releaseDate)}, refreshed {formatDate(index.catalog.generatedAt)}.
+          </p>
         </footer>
       ) : null}
 

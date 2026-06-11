@@ -759,15 +759,15 @@ section > .section-note + .icon-grid {
 /* full-width single-line footer pinned to the bottom of the page */
 .footer {
   margin-top: 64px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 8px 24px;
   border-top: 1px solid var(--line);
   padding: 16px 32px 20px;
   color: var(--muted);
-  font-size: 13px;
+  font-size: 13.5px;
+  text-align: center;
+}
+
+.footer p {
+  margin: 0;
 }
 
 .boot {
