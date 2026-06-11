@@ -8,8 +8,8 @@
   --ink: oklch(0.22 0.02 260);
   --muted: oklch(0.45 0.015 260);
   --line: oklch(0.89 0.005 260);
-  --accent: oklch(0.55 0.14 60);
-  --accent-soft: oklch(0.55 0.14 60 / 0.12);
+  --accent: oklch(0.52 0.16 45);
+  --accent-soft: oklch(0.52 0.16 45 / 0.11);
   --accent-ink: oklch(0.99 0.005 60);
   --well: oklch(0.955 0.004 260);
   --shadow: 0 8px 28px oklch(0.2 0.02 260 / 0.12);
@@ -456,18 +456,23 @@ section > .section-note + .icon-grid {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 2px;
-  font-size: 13px;
+  gap: 3px;
+  font-size: 15px;
   color: var(--muted);
-  margin-bottom: -22px;
+  margin-bottom: -26px;
 }
 
 .crumbs button {
   border: 0;
   background: none;
   color: var(--accent);
+  font-weight: 550;
   padding: 2px 4px;
   border-radius: var(--r-sm);
+}
+
+.crumbs button:hover {
+  text-decoration: underline;
 }
 
 .crumb {
