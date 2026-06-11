@@ -25,7 +25,6 @@ type Feedback = { action: string; state: "done" | "error" } | null;
 export function DetailPanel({ icon, index, baseUrl, onClose }: DetailPanelProps) {
   const theme = useTheme();
   const [size, setSize] = useState<number>(64);
-  const [ground, setGround] = useState<"light" | "dark">(theme);
   const [variant, setVariant] = useState<"light" | "dark">(theme);
   const [feedback, setFeedback] = useState<Feedback>(null);
   const [linkCopied, setLinkCopied] = useState(false);
@@ -136,7 +135,7 @@ export function DetailPanel({ icon, index, baseUrl, onClose }: DetailPanelProps)
         </div>
       </header>
 
-      <div className={`panel-preview panel-preview--${ground}`}>
+      <div className={`panel-preview panel-preview--${theme}`}>
         <img
           key={assetUrl}
           src={assetUrl}
@@ -147,13 +146,6 @@ export function DetailPanel({ icon, index, baseUrl, onClose }: DetailPanelProps)
           }}
           onLoad={(event) => event.currentTarget.classList.add("is-loaded")}
         />
-        <div className="seg panel-ground" role="group" aria-label="Preview background">
-          {(["light", "dark"] as const).map((g) => (
-            <button key={g} type="button" className={`seg-item${ground === g ? " seg-item--on" : ""}`} onClick={() => setGround(g)}>
-              {g}
-            </button>
-          ))}
-        </div>
       </div>
 
       {icon.assetDark ? (

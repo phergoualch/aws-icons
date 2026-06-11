@@ -1,8 +1,12 @@
-# AWS Icons Catalog
+# AWS Icons
 
 A static catalog of the official [AWS Architecture Icons](https://aws.amazon.com/architecture/icons/),
-deployed on GitHub Pages. Browse by category, service, and resource, search
-everything, and download or copy any icon as SVG or PNG in the size you need.
+deployed on GitHub Pages: <https://phergoualch.github.io/aws-icons/>
+
+Browse by category, service, and resource, search everything (acronyms like
+"S3" or "EC2" work), and download or copy any icon as SVG or PNG in the size
+you need. Every icon has a shareable URL, and any category, service, or the
+whole catalog can be downloaded as a ZIP that mirrors the browsing hierarchy.
 
 ## How it works
 
