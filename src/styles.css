@@ -2,17 +2,21 @@
 
 /* ---------- Tokens ---------- */
 :root {
-  --bg: oklch(0.985 0.002 260);
+  /* AWS brand pair: Smile Orange #FF9900, Squid Ink #252F3E */
+  --brand: oklch(0.776 0.171 64.5); /* #FF9900 */
+  --brand-ink: oklch(0.305 0.033 257); /* #252F3E */
+
+  --bg: oklch(0.985 0.003 257);
   --surface: oklch(1 0 0);
-  --surface-2: oklch(0.965 0.004 260);
-  --ink: oklch(0.22 0.02 260);
-  --muted: oklch(0.45 0.015 260);
-  --line: oklch(0.89 0.005 260);
-  --accent: oklch(0.52 0.16 45);
-  --accent-soft: oklch(0.52 0.16 45 / 0.11);
+  --surface-2: oklch(0.962 0.006 257);
+  --ink: oklch(0.305 0.033 257); /* #252F3E */
+  --muted: oklch(0.47 0.026 257);
+  --line: oklch(0.89 0.008 257);
+  --accent: oklch(0.55 0.15 64); /* #FF9900 darkened for AA text on light */
+  --accent-soft: oklch(0.55 0.15 64 / 0.11);
   --accent-ink: oklch(0.99 0.005 60);
-  --well: oklch(0.955 0.004 260);
-  --shadow: 0 8px 28px oklch(0.2 0.02 260 / 0.12);
+  --well: oklch(0.955 0.005 257);
+  --shadow: 0 8px 28px oklch(0.3 0.03 257 / 0.14);
 
   --r-sm: 6px;
   --r-md: 10px;
@@ -25,16 +29,17 @@
 }
 
 :root[data-theme="dark"] {
-  --bg: oklch(0.17 0.012 260);
-  --surface: oklch(0.21 0.014 260);
-  --surface-2: oklch(0.245 0.015 260);
-  --ink: oklch(0.93 0.005 260);
-  --muted: oklch(0.7 0.012 260);
-  --line: oklch(0.31 0.014 260);
-  --accent: oklch(0.74 0.15 65);
-  --accent-soft: oklch(0.74 0.15 65 / 0.16);
-  --accent-ink: oklch(0.2 0.04 65);
-  --well: oklch(0.255 0.015 260);
+  /* Squid-ink-based dark surfaces */
+  --bg: oklch(0.245 0.028 257);
+  --surface: oklch(0.305 0.033 257); /* #252F3E */
+  --surface-2: oklch(0.35 0.035 257);
+  --ink: oklch(0.94 0.008 257);
+  --muted: oklch(0.73 0.02 257);
+  --line: oklch(0.41 0.033 257);
+  --accent: oklch(0.776 0.171 64.5); /* #FF9900 */
+  --accent-soft: oklch(0.776 0.171 64.5 / 0.15);
+  --accent-ink: oklch(0.305 0.033 257); /* squid ink on orange, AWS style */
+  --well: oklch(0.36 0.035 257);
   --shadow: 0 8px 28px oklch(0 0 0 / 0.45);
 
   color-scheme: dark;
@@ -594,7 +599,7 @@ section > .section-note + .icon-grid {
 }
 
 .panel-preview--dark {
-  background: oklch(0.19 0.012 260);
+  background: oklch(0.25 0.028 257);
 }
 
 .panel-row {
@@ -684,13 +689,13 @@ section > .section-note + .icon-grid {
 }
 
 .button--primary {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--accent-ink);
+  background: var(--brand);
+  border-color: var(--brand);
+  color: var(--brand-ink);
 }
 
 .button--primary:hover {
-  background: color-mix(in oklab, var(--accent) 88%, var(--ink));
+  background: color-mix(in oklab, var(--brand) 90%, white);
 }
 
 .button:active {
