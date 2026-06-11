@@ -655,24 +655,17 @@ section > .section-head + .icon-grid {
 }
 
 .button--primary {
-  background: var(--brand);
-  border-color: var(--brand);
-  color: var(--brand-ink);
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--accent-ink);
 }
 
 .button--primary:hover {
-  background: color-mix(in oklab, var(--brand) 90%, white);
+  background: color-mix(in oklab, var(--accent) 90%, white);
 }
 
 .button:active {
   transform: translateY(1px);
-}
-
-.panel-path {
-  margin: 0;
-  font-size: 12px;
-  color: var(--muted);
-  overflow-wrap: anywhere;
 }
 
 .progress {

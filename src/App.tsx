@@ -193,17 +193,20 @@ function HomeView({ index, onNavigate, onSelect }: ViewProps) {
                 (sum, svc) => sum + (index.resourcesByService.get(svc.slug)?.length ?? 0),
                 0
               );
-            const sub =
-              services === 0 && resources === 0
-                ? "Category icon only"
-                : [services > 0 ? plural(services, "service") : "", resources > 0 ? plural(resources, "resource") : ""]
-                    .filter(Boolean)
-                    .join(" · ");
+            // Without services or resources there is no downstream page; the
+            // card is just the category icon, clicking it opens the exporter.
+            if (services === 0 && resources === 0 && icon) {
+              return <IconTile key={category.slug} icon={icon} baseUrl={BASE} selected={false} onSelect={onSelect} />;
+            }
+            const subs = [
+              services > 0 ? plural(services, "service") : "",
+              resources > 0 ? plural(resources, "resource") : "",
+            ].filter(Boolean);
             return (
               <NavCard
                 key={category.slug}
                 name={category.name}
-                sub={sub}
+                subs={subs}
                 onOpen={() => onNavigate({ view: "category", category: category.slug })}
               >
                 {icon ? <GrabIcon icon={icon} assetUrl={`${BASE}${icon.asset}`} size={64} onSelect={onSelect} /> : null}
@@ -219,7 +222,7 @@ function HomeView({ index, onNavigate, onSelect }: ViewProps) {
           {general ? (
             <NavCard
               name={general.name}
-              sub="Clients, servers, users, documents"
+              subs={["Clients, servers, users, documents"]}
               onOpen={() => onNavigate({ view: "category", category: "general-icons" })}
             >
               <span className="category-glyph" aria-hidden>
@@ -228,7 +231,7 @@ function HomeView({ index, onNavigate, onSelect }: ViewProps) {
             </NavCard>
           ) : null}
           {index.groups.length > 0 ? (
-            <NavCard name="Group shapes" sub="VPC, subnet, account, region outlines" onOpen={() => onNavigate({ view: "groups" })}>
+            <NavCard name="Group shapes" subs={["VPC, subnet, account, region outlines"]} onOpen={() => onNavigate({ view: "groups" })}>
               <span className="category-glyph" aria-hidden>
                 <Group size={28} />
               </span>
@@ -241,7 +244,7 @@ function HomeView({ index, onNavigate, onSelect }: ViewProps) {
 }
 
 // Navigation card with the same anatomy as IconTile, so every page shares one card style.
-function NavCard({ name, sub, onOpen, children }: { name: string; sub: string; onOpen: () => void; children: React.ReactNode }) {
+function NavCard({ name, subs, onOpen, children }: { name: string; subs: string[]; onOpen: () => void; children: React.ReactNode }) {
   return (
     <div
       className="tile"
@@ -258,7 +261,11 @@ function NavCard({ name, sub, onOpen, children }: { name: string; sub: string; o
       <span className="tile-well">{children}</span>
       <span className="tile-meta">
         <span className="tile-name">{name}</span>
-        <span className="tile-sub">{sub}</span>
+        {subs.map((sub) => (
+          <span key={sub} className="tile-sub">
+            {sub}
+          </span>
+        ))}
       </span>
       <ChevronRight size={16} className="tile-chevron" aria-hidden />
     </div>

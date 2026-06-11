@@ -171,10 +171,6 @@ export function DetailPanel({ icon, index, baseUrl, onClose }: DetailPanelProps)
           {buttonLabel("copy-svg", "Copy SVG")}
         </button>
       </div>
-
-      <p className="panel-path">
-        <code>{asset}</code>
-      </p>
     </div>
     </div>
   );
