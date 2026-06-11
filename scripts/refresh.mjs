@@ -113,6 +113,22 @@ function categoryFromSlug(slug) {
   return CATEGORY_NAMES[slug] ?? displayName(slug).replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
+/**
+ * AWS ships category icons as 90x90 SVGs: an 80x80 colored tile inset at
+ * (5,5) plus a decorative 2px #879196 border rect. Strip the border and crop
+ * the viewBox so the colored tile is full-bleed like every other icon kind.
+ */
+function cleanCategorySvg(content) {
+  let text = Buffer.from(content).toString("utf8");
+  const withoutBorder = text.replace(/<rect[^>]*stroke="#879196"[^>]*(?:\/>|><\/rect>)/g, "");
+  if (withoutBorder !== text) {
+    text = withoutBorder
+      .replace(/viewBox="0 0 90 90"/, 'viewBox="5 5 80 80"')
+      .replace(/width="90px" height="90px"/, 'width="80px" height="80px"');
+  }
+  return Buffer.from(text, "utf8");
+}
+
 async function discoverArchiveUrl() {
   const res = await fetch(PAGE_URL, { redirect: "follow" });
   if (!res.ok) throw new Error(`Failed to load ${PAGE_URL}: ${res.status}`);
@@ -159,6 +175,7 @@ function parseArchive(bytes) {
   const resources = []; // { id, name, slug, category, serviceSlug, asset }
   const darkResources = new Map(); // slug -> dark-theme SVG content
   const groups = [];
+  const darkGroups = new Map();
 
   // Prefer the largest available size per icon; entries are keyed per icon.
   const serviceBest = new Map();
@@ -171,7 +188,7 @@ function parseArchive(bytes) {
       const m = file.match(/^Arch-Category_(.+)_(\d+)$/);
       if (!m || Number(m[2]) !== 64) continue;
       const slug = slugify(m[1]);
-      categories.set(slug, { slug, name: categoryFromSlug(slug), content });
+      categories.set(slug, { slug, name: categoryFromSlug(slug), content: cleanCategorySvg(content) });
     } else if (parts[0].startsWith("Architecture-Service-Icons")) {
       const m = file.match(/^Arch_(.+)_(\d+)$/);
       if (!m) continue;
@@ -195,17 +212,18 @@ function parseArchive(bytes) {
       const categorySlug = CATEGORY_ALIASES[rawCat] ?? rawCat;
       resources.push({ raw: m[1], slug: slugify(m[1]), category: categorySlug, content });
     } else if (parts[0].startsWith("Architecture-Group-Icons")) {
-      const m = file.match(/^(.+)_(\d+)(_Dark)?$/i);
-      if (!m || m[3]) continue;
-      groups.push({ slug: slugify(m[1]), name: displayName(m[1]), content });
+      const m = file.match(/^(.+?)_(\d+)(_Dark)?$/i);
+      if (!m) continue;
+      if (m[3]) darkGroups.set(slugify(m[1]), content);
+      else groups.push({ slug: slugify(m[1]), name: displayName(m[1]), content });
     }
   }
 
   for (const svc of serviceBest.values()) services.push(svc);
-  return { categories, services, resources, darkResources, groups };
+  return { categories, services, resources, darkResources, groups, darkGroups };
 }
 
-function buildCatalog({ categories, services, resources, darkResources, groups }, meta) {
+function buildCatalog({ categories, services, resources, darkResources, groups, darkGroups }, meta) {
   const assets = new Map(); // public path -> content
   const icons = [];
 
@@ -282,7 +300,14 @@ function buildCatalog({ categories, services, resources, darkResources, groups }
   for (const grp of [...groups].sort((a, b) => a.slug.localeCompare(b.slug))) {
     const path = `icons/groups/${grp.slug}.svg`;
     assets.set(path, grp.content);
-    icons.push({ id: `group:${grp.slug}`, kind: "group", name: grp.name, slug: grp.slug, category: null, asset: path });
+    const icon = { id: `group:${grp.slug}`, kind: "group", name: grp.name, slug: grp.slug, category: null, asset: path };
+    const darkContent = darkGroups.get(grp.slug);
+    if (darkContent) {
+      const darkPath = `icons/groups/${grp.slug}_dark.svg`;
+      assets.set(darkPath, darkContent);
+      icon.assetDark = darkPath;
+    }
+    icons.push(icon);
   }
 
   const catalog = {
@@ -299,8 +324,12 @@ function buildCatalog({ categories, services, resources, darkResources, groups }
       resources: resources.length,
       groups: groups.length,
     },
-    categories: [...categories.values()]
-      .map(({ slug, name }) => ({ slug, name }))
+    // Union of categories that have an official icon and categories that only
+    // appear through services/resources (e.g. General Icons).
+    categories: [
+      ...new Set([...categories.keys(), ...services.map((s) => s.category), ...resources.map((r) => r.category)]),
+    ]
+      .map((slug) => ({ slug, name: categories.get(slug)?.name ?? categoryFromSlug(slug) }))
       .sort((a, b) => a.name.localeCompare(b.name)),
     icons,
   };

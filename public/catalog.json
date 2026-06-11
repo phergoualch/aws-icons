@@ -74,6 +74,10 @@
    "name": "Games"
   },
   {
+   "slug": "general-icons",
+   "name": "General Icons"
+  },
+  {
    "slug": "internet-of-things",
    "name": "Internet of Things"
   },
@@ -7587,7 +7591,8 @@
    "name": "AWS Cloud",
    "slug": "aws-cloud",
    "category": null,
-   "asset": "icons/groups/aws-cloud.svg"
+   "asset": "icons/groups/aws-cloud.svg",
+   "assetDark": "icons/groups/aws-cloud_dark.svg"
   },
   {
    "id": "group:aws-cloud-logo",
@@ -7595,7 +7600,8 @@
    "name": "AWS Cloud logo",
    "slug": "aws-cloud-logo",
    "category": null,
-   "asset": "icons/groups/aws-cloud-logo.svg"
+   "asset": "icons/groups/aws-cloud-logo.svg",
+   "assetDark": "icons/groups/aws-cloud-logo_dark.svg"
   },
   {
    "id": "group:aws-iot-greengrass-deployment",
@@ -7670,6 +7676,6 @@
    "asset": "icons/groups/virtual-private-cloud-vpc.svg"
   }
  ],
- "contentHash": "3dd6babea4c71f670905b784673443e88cfca2b1637c5459574e5f5d613e2bda",
- "generatedAt": "2026-06-11T12:51:11.197Z"
+ "contentHash": "fbadc685520876ccaaadeb06b9e0fca0585f6d10906a8fdf2a06a588aa13b492",
+ "generatedAt": "2026-06-11T13:05:47.236Z"
 }

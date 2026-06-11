@@ -11,6 +11,7 @@ import {
   resizeSvg,
   svgToPngBlob,
 } from "../lib/exporter";
+import { useTheme } from "../lib/theme";
 
 interface DetailPanelProps {
   icon: CatalogIcon;
@@ -22,18 +23,19 @@ interface DetailPanelProps {
 type Feedback = { action: string; state: "done" | "error" } | null;
 
 export function DetailPanel({ icon, index, baseUrl, onClose }: DetailPanelProps) {
+  const theme = useTheme();
   const [size, setSize] = useState<number>(64);
-  const [ground, setGround] = useState<"light" | "dark">("light");
-  const [variant, setVariant] = useState<"light" | "dark">("light");
+  const [ground, setGround] = useState<"light" | "dark">(theme);
+  const [variant, setVariant] = useState<"light" | "dark">(theme);
   const [feedback, setFeedback] = useState<Feedback>(null);
 
   const asset = variant === "dark" && icon.assetDark ? icon.assetDark : icon.asset;
   const assetUrl = `${baseUrl}${asset}`;
 
   useEffect(() => {
-    setVariant("light");
+    setVariant(theme);
     setFeedback(null);
-  }, [icon.id]);
+  }, [icon.id, theme]);
 
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {

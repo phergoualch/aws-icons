@@ -12,6 +12,7 @@ import {
   type CatalogIcon,
   type CatalogIndex,
 } from "./lib/catalog";
+import { ThemeContext } from "./lib/theme";
 
 const BASE = import.meta.env.BASE_URL;
 const THEME_KEY = "aws-icons-theme";
@@ -86,6 +87,7 @@ export function App() {
   }
 
   return (
+    <ThemeContext.Provider value={theme}>
     <div className={`app${selected ? " app--panel" : ""}`}>
       <Header
         query={query}
@@ -132,6 +134,7 @@ export function App() {
 
       {selected && index ? <DetailPanel icon={selected} index={index} baseUrl={BASE} onClose={() => setSelected(null)} /> : null}
     </div>
+    </ThemeContext.Provider>
   );
 }
 

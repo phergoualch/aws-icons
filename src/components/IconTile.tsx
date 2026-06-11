@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Check, Copy, Download } from "lucide-react";
 import type { CatalogIcon } from "../lib/catalog";
 import { copyText, downloadBlob, exportFilename, fetchSvgText } from "../lib/exporter";
+import { useTheme } from "../lib/theme";
 
 interface IconTileProps {
   icon: CatalogIcon;
@@ -12,8 +13,12 @@ interface IconTileProps {
 }
 
 export function IconTile({ icon, baseUrl, subtitle, selected, onSelect }: IconTileProps) {
+  const theme = useTheme();
   const [copied, setCopied] = useState(false);
-  const assetUrl = `${baseUrl}${icon.asset}`;
+  // Icons with theme variants (dark-stroke line art) are invisible on the
+  // opposite ground; preview the variant that matches the current theme.
+  const asset = theme === "dark" && icon.assetDark ? icon.assetDark : icon.asset;
+  const assetUrl = `${baseUrl}${asset}`;
 
   const handleCopySvg = async (event: React.MouseEvent) => {
     event.stopPropagation();
