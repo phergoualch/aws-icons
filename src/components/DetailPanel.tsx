@@ -42,7 +42,11 @@ export function DetailPanel({ icon, index, baseUrl, onClose }: DetailPanelProps)
       if (event.key === "Escape") onClose();
     };
     window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    document.body.style.overflow = "hidden";
+    return () => {
+      window.removeEventListener("keydown", onKey);
+      document.body.style.overflow = "";
+    };
   }, [onClose]);
 
   const categoryLabel = icon.category ? (index.categoryName.get(icon.category) ?? icon.category) : null;
@@ -89,7 +93,13 @@ export function DetailPanel({ icon, index, baseUrl, onClose }: DetailPanelProps)
   };
 
   return (
-    <aside className="panel" aria-label={`${icon.name} export options`}>
+    <div
+      className="overlay"
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
+    >
+    <div className="panel" role="dialog" aria-modal="true" aria-label={`${icon.name} export options`}>
       <header className="panel-head">
         <div>
           <h2 className="panel-title">{icon.name}</h2>
@@ -105,7 +115,7 @@ export function DetailPanel({ icon, index, baseUrl, onClose }: DetailPanelProps)
       </header>
 
       <div className={`panel-preview panel-preview--${ground}`}>
-        <img key={assetUrl} src={assetUrl} alt={`${icon.name} icon preview`} style={{ width: Math.min(size, 160), height: Math.min(size, 160) }} />
+        <img key={assetUrl} src={assetUrl} alt={`${icon.name} icon preview`} style={{ width: Math.min(size, 220), height: Math.min(size, 220) }} />
       </div>
 
       <div className="panel-row">
@@ -165,6 +175,7 @@ export function DetailPanel({ icon, index, baseUrl, onClose }: DetailPanelProps)
       <p className="panel-path">
         <code>{asset}</code>
       </p>
-    </aside>
+    </div>
+    </div>
   );
 }

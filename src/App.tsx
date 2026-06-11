@@ -88,7 +88,7 @@ export function App() {
 
   return (
     <ThemeContext.Provider value={theme}>
-    <div className={`app${selected ? " app--panel" : ""}`}>
+    <div className="app">
       <Header
         query={query}
         onQueryChange={setQuery}
