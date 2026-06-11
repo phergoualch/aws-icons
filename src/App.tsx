@@ -111,7 +111,6 @@ export function App() {
         onQueryChange={setQuery}
         theme={theme}
         onToggleTheme={() => setTheme((t) => (t === "dark" ? "light" : "dark"))}
-        generatedAt={catalog?.generatedAt}
         onHome={() => navigate({ view: "home" })}
       />
 
@@ -173,9 +172,8 @@ function HomeView({ index, onNavigate }: ViewProps) {
       <section className="intro">
         <h1>Every AWS architecture icon, current and one click away</h1>
         <p>
-          {counts.services} services, {counts.resources} resources, and {counts.groups} group shapes across {counts.categories}{" "}
-          categories, refreshed weekly from the official AWS icon package. Download or copy any icon as SVG or PNG in the size you
-          need; conversion happens in your browser.
+          {counts.services} services, {counts.resources} resources, and {counts.groups} group shapes, refreshed weekly from the
+          official AWS icon package. Download or copy any icon as SVG or PNG, in any size.
         </p>
       </section>
 
@@ -224,9 +222,7 @@ function HomeView({ index, onNavigate }: ViewProps) {
                 <Shapes size={26} />
               </span>
               <span className="category-name">{general.name}</span>
-              <span className="category-count">
-                Clients, servers, documents, and other generic diagram resources
-              </span>
+              <span className="category-count">Clients, servers, users, documents</span>
             </button>
           ) : null}
           {index.groups.length > 0 ? (
@@ -235,7 +231,7 @@ function HomeView({ index, onNavigate }: ViewProps) {
                 <Group size={26} />
               </span>
               <span className="category-name">Group shapes</span>
-              <span className="category-count">Container outlines for VPCs, subnets, accounts, and regions</span>
+              <span className="category-count">VPC, subnet, account, region outlines</span>
             </button>
           ) : null}
         </div>
@@ -251,10 +247,7 @@ function GroupsView({ index, onNavigate, selected, onSelect }: ViewProps) {
       <section className="view-head">
         <div>
           <h1>Group shapes</h1>
-          <p className="section-note">
-            Container outlines for VPCs, subnets, accounts, and regions; drawn as frames around other icons in architecture
-            diagrams.
-          </p>
+          <p className="section-note">{plural(index.groups.length, "container outline")} for VPCs, subnets, accounts, and regions</p>
         </div>
         <div className="view-head-actions">
           <BulkDownload icons={index.groups} archiveName="aws-icons-groups" baseUrl={BASE} />
@@ -285,35 +278,33 @@ function CategoryView({ index, category, onNavigate, selected, onSelect }: ViewP
     [categoryIcon, services, loose, index]
   );
 
+  const resourceCount = allCategoryIcons.filter((i) => i.kind === "resource").length;
+
   return (
     <>
       <Breadcrumb onNavigate={onNavigate} trail={[{ label: name }]} />
       <section className="view-head">
-        {categoryIcon ? <img src={`${BASE}${categoryIcon.asset}`} alt="" width={48} height={48} /> : null}
+        {categoryIcon ? (
+          <button
+            type="button"
+            className="view-head-icon"
+            title="Export the category icon"
+            onClick={() => onSelect(categoryIcon)}
+          >
+            <img src={`${BASE}${categoryIcon.asset}`} alt={`${name} category icon`} width={56} height={56} />
+          </button>
+        ) : null}
         <div>
           <h1>{name}</h1>
           <p className="section-note">
             {plural(services.length, "service")}
-            {loose.length > 0 ? `, ${plural(loose.length, "category-level resource")}` : ""}. Select a service to see its
-            resource icons.
+            {resourceCount > 0 ? ` · ${plural(resourceCount, "resource")}` : ""}
           </p>
         </div>
         <div className="view-head-actions">
           <BulkDownload icons={allCategoryIcons} archiveName={`aws-icons-${category}`} baseUrl={BASE} />
         </div>
       </section>
-
-      {categoryIcon ? (
-        <div className="icon-grid icon-grid--single">
-          <IconTile
-            icon={categoryIcon}
-            baseUrl={BASE}
-            subtitle="category icon"
-            selected={selected?.id === categoryIcon.id}
-            onSelect={onSelect}
-          />
-        </div>
-      ) : null}
 
       {services.length > 0 ? (
         <section aria-label="Services">
@@ -349,7 +340,7 @@ function CategoryView({ index, category, onNavigate, selected, onSelect }: ViewP
       ) : null}
 
       {services.length === 0 && loose.length === 0 ? (
-        <p className="empty">This category only has its category icon; select it above to export.</p>
+        <p className="empty">Only the category icon; click it above to export.</p>
       ) : null}
     </>
   );
@@ -414,10 +405,19 @@ function ServiceView({
         ]}
       />
       <section className="view-head">
-        {serviceIcon ? <img src={`${BASE}${serviceIcon.asset}`} alt="" width={48} height={48} /> : null}
+        {serviceIcon ? (
+          <button
+            type="button"
+            className="view-head-icon"
+            title="Export the service icon"
+            onClick={() => onSelect(serviceIcon)}
+          >
+            <img src={`${BASE}${serviceIcon.asset}`} alt={`${serviceIcon.name} service icon`} width={56} height={56} />
+          </button>
+        ) : null}
         <div>
           <h1>{serviceIcon?.name ?? service}</h1>
-          <p className="section-note">Service icon plus {plural(resources.length, "resource icon")}.</p>
+          <p className="section-note">{plural(resources.length, "resource")}</p>
         </div>
         <div className="view-head-actions">
           <BulkDownload
@@ -462,9 +462,7 @@ function SearchResults({
   if (results.length === 0) {
     return (
       <div className="empty">
-        <p>
-          No icons match “{query.trim()}”. Try a shorter term; search covers service names, resource names, and categories.
-        </p>
+        <p>No icons match “{query.trim()}”.</p>
       </div>
     );
   }

@@ -1,17 +1,15 @@
 import { useEffect, useRef } from "react";
 import { Moon, Search, Sun, X } from "lucide-react";
-import { formatDate } from "../lib/catalog";
 
 interface HeaderProps {
   query: string;
   onQueryChange: (value: string) => void;
   theme: "light" | "dark";
   onToggleTheme: () => void;
-  generatedAt?: string;
   onHome: () => void;
 }
 
-export function Header({ query, onQueryChange, theme, onToggleTheme, generatedAt, onHome }: HeaderProps) {
+export function Header({ query, onQueryChange, theme, onToggleTheme, onHome }: HeaderProps) {
   const inputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -29,7 +27,7 @@ export function Header({ query, onQueryChange, theme, onToggleTheme, generatedAt
     <header className="header">
       <button type="button" className="brand" onClick={onHome}>
         <span className="brand-mark" aria-hidden>
-          <svg viewBox="0 0 24 24" width="30" height="30">
+          <svg viewBox="0 0 24 24" width="36" height="36">
             <rect x="2" y="2" width="20" height="20" rx="5" fill="var(--brand)" />
             <rect x="6.5" y="6.5" width="4.6" height="4.6" rx="1.4" fill="var(--brand-ink)" />
             <rect x="12.9" y="6.5" width="4.6" height="4.6" rx="1.4" fill="var(--brand-ink)" opacity="0.65" />
@@ -68,11 +66,6 @@ export function Header({ query, onQueryChange, theme, onToggleTheme, generatedAt
       </div>
 
       <div className="header-end">
-        {generatedAt ? (
-          <span className="updated" title={`Catalog refreshed ${formatDate(generatedAt)}`}>
-            Updated {formatDate(generatedAt)}
-          </span>
-        ) : null}
         <button
           type="button"
           className="icon-button"
