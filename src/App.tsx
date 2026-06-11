@@ -183,7 +183,7 @@ function HomeView({ index, onNavigate, onSelect }: ViewProps) {
           <h2 className="section-title">Browse by category</h2>
           <BulkDownload icons={index.catalog.icons} archiveName="aws-icons-all" baseUrl={BASE} label="Download everything" />
         </div>
-        <div className="category-grid">
+        <div className="icon-grid">
           {mainCategories.map((category) => {
             const icon = index.categoryIcon.get(category.slug);
             const services = index.servicesByCategory.get(category.slug)?.length ?? 0;
@@ -193,33 +193,21 @@ function HomeView({ index, onNavigate, onSelect }: ViewProps) {
                 (sum, svc) => sum + (index.resourcesByService.get(svc.slug)?.length ?? 0),
                 0
               );
-            const go = () => onNavigate({ view: "category", category: category.slug });
+            const sub =
+              services === 0 && resources === 0
+                ? "Category icon only"
+                : [services > 0 ? plural(services, "service") : "", resources > 0 ? plural(resources, "resource") : ""]
+                    .filter(Boolean)
+                    .join(" · ");
             return (
-              <div
+              <NavCard
                 key={category.slug}
-                className="category-card"
-                role="button"
-                tabIndex={0}
-                onClick={go}
-                onKeyDown={(event) => {
-                  if ((event.key === "Enter" || event.key === " ") && event.target === event.currentTarget) {
-                    event.preventDefault();
-                    go();
-                  }
-                }}
+                name={category.name}
+                sub={sub}
+                onOpen={() => onNavigate({ view: "category", category: category.slug })}
               >
-                {icon ? <GrabIcon icon={icon} assetUrl={`${BASE}${icon.asset}`} size={52} onSelect={onSelect} /> : null}
-                <span className="category-text">
-                  <span className="category-name">{category.name}</span>
-                  <span className="category-count">
-                    {services > 0 ? plural(services, "service") : ""}
-                    {services > 0 && resources > 0 ? " · " : ""}
-                    {resources > 0 ? plural(resources, "resource") : ""}
-                    {services === 0 && resources === 0 ? "Category icon only" : ""}
-                  </span>
-                </span>
-                <ChevronRight size={16} className="category-chevron" aria-hidden />
-              </div>
+                {icon ? <GrabIcon icon={icon} assetUrl={`${BASE}${icon.asset}`} size={64} onSelect={onSelect} /> : null}
+              </NavCard>
             );
           })}
         </div>
@@ -227,34 +215,53 @@ function HomeView({ index, onNavigate, onSelect }: ViewProps) {
 
       <section aria-label="More icon sets">
         <h2 className="section-title">More icon sets</h2>
-        <div className="category-grid">
+        <div className="icon-grid">
           {general ? (
-            <button type="button" className="category-card" onClick={() => onNavigate({ view: "category", category: "general-icons" })}>
+            <NavCard
+              name={general.name}
+              sub="Clients, servers, users, documents"
+              onOpen={() => onNavigate({ view: "category", category: "general-icons" })}
+            >
               <span className="category-glyph" aria-hidden>
-                <Shapes size={26} />
+                <Shapes size={28} />
               </span>
-              <span className="category-text">
-                <span className="category-name">{general.name}</span>
-                <span className="category-count">Clients, servers, users, documents</span>
-              </span>
-              <ChevronRight size={16} className="category-chevron" aria-hidden />
-            </button>
+            </NavCard>
           ) : null}
           {index.groups.length > 0 ? (
-            <button type="button" className="category-card" onClick={() => onNavigate({ view: "groups" })}>
+            <NavCard name="Group shapes" sub="VPC, subnet, account, region outlines" onOpen={() => onNavigate({ view: "groups" })}>
               <span className="category-glyph" aria-hidden>
-                <Group size={26} />
+                <Group size={28} />
               </span>
-              <span className="category-text">
-                <span className="category-name">Group shapes</span>
-                <span className="category-count">VPC, subnet, account, region outlines</span>
-              </span>
-              <ChevronRight size={16} className="category-chevron" aria-hidden />
-            </button>
+            </NavCard>
           ) : null}
         </div>
       </section>
     </>
+  );
+}
+
+// Navigation card with the same anatomy as IconTile, so every page shares one card style.
+function NavCard({ name, sub, onOpen, children }: { name: string; sub: string; onOpen: () => void; children: React.ReactNode }) {
+  return (
+    <div
+      className="tile"
+      role="button"
+      tabIndex={0}
+      onClick={onOpen}
+      onKeyDown={(event) => {
+        if ((event.key === "Enter" || event.key === " ") && event.target === event.currentTarget) {
+          event.preventDefault();
+          onOpen();
+        }
+      }}
+    >
+      <span className="tile-well">{children}</span>
+      <span className="tile-meta">
+        <span className="tile-name">{name}</span>
+        <span className="tile-sub">{sub}</span>
+      </span>
+      <ChevronRight size={16} className="tile-chevron" aria-hidden />
+    </div>
   );
 }
 
