@@ -1,0 +1,122 @@
+# Deploys the catalog to GitHub Pages and keeps the icon set current.
+#
+# Scheduled runs (weekly) and opt-in manual runs execute scripts/refresh.mjs,
+# which downloads the latest official AWS icon package and rewrites
+# public/icons/** and public/catalog.json only when content actually changed.
+# Any change is committed back to main with GITHUB_TOKEN, then the same
+# refreshed commit is built and deployed in this run (pushes made with
+# GITHUB_TOKEN do not trigger recursive push workflows).
+name: Deploy GitHub Pages
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      refresh:
+        description: Refresh the icon catalog from AWS before deploying
+        required: false
+        default: false
+        type: boolean
+  schedule:
+    - cron: "17 4 * * 1"
+
+concurrency:
+  group: pages-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    name: Refresh icon catalog
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.refresh)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    outputs:
+      commit_sha: ${{ steps.commit.outputs.commit_sha }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6.0.3
+        with:
+          ref: main
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Refresh icon catalog from AWS
+        run: node scripts/refresh.mjs
+
+      - name: Commit refreshed catalog
+        id: commit
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "Icon catalog already up to date."
+          else
+            git add -A
+            git commit -m "chore: refresh AWS icon catalog"
+            git push
+          fi
+
+          echo "commit_sha=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    name: Build and deploy
+    needs:
+      - refresh
+    if: always() && (needs.refresh.result == 'success' || needs.refresh.result == 'skipped')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: read
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v6.0.3
+        with:
+          ref: ${{ needs.refresh.outputs.commit_sha || github.sha }}
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Lint and test
+        run: |
+          npm run lint
+          npm run test
+
+      - name: Build
+        run: npm run build
+
+      - name: Configure Pages
+        uses: actions/configure-pages@v6.0.0
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v5.0.0
+        with:
+          path: dist
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v5.0.0
