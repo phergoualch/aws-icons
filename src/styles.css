@@ -463,10 +463,6 @@ section > .section-head + .icon-grid {
   flex-wrap: wrap;
 }
 
-.view-head-actions {
-  margin-left: auto;
-}
-
 .view-head h1 {
   font-size: 1.45rem;
   font-weight: 650;

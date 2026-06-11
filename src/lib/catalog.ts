@@ -30,6 +30,7 @@ export interface Catalog {
 
 export interface CatalogIndex {
   catalog: Catalog;
+  iconById: Map<string, CatalogIcon>;
   categoryName: Map<string, string>;
   categoryIcon: Map<string, CatalogIcon>;
   servicesByCategory: Map<string, CatalogIcon[]>;
@@ -89,6 +90,7 @@ export function buildIndex(catalog: Catalog): CatalogIndex {
 
   return {
     catalog,
+    iconById: new Map(catalog.icons.map((icon) => [icon.id, icon])),
     categoryName,
     categoryIcon,
     servicesByCategory,

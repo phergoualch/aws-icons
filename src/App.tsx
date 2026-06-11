@@ -19,25 +19,35 @@ import { ThemeContext } from "./lib/theme";
 const BASE = import.meta.env.BASE_URL;
 const THEME_KEY = "aws-icons-theme";
 
-type Route =
+type Route = (
   | { view: "home" }
   | { view: "groups" }
   | { view: "category"; category: string }
-  | { view: "service"; category: string; service: string };
+  | { view: "service"; category: string; service: string }
+) & {
+  /** Icon id whose export panel is open, kept in the URL so icons are shareable. */
+  icon?: string;
+};
 
 function parseHash(): Route {
-  const parts = window.location.hash.replace(/^#\/?/, "").split("/").filter(Boolean).map(decodeURIComponent);
-  if (parts[0] === "groups") return { view: "groups" };
-  if (parts[0] === "c" && parts[1] && parts[2]) return { view: "service", category: parts[1], service: parts[2] };
-  if (parts[0] === "c" && parts[1]) return { view: "category", category: parts[1] };
-  return { view: "home" };
+  const [path, params] = window.location.hash.split("?");
+  const icon = new URLSearchParams(params).get("icon") ?? undefined;
+  const parts = path.replace(/^#\/?/, "").split("/").filter(Boolean).map(decodeURIComponent);
+  if (parts[0] === "groups") return { view: "groups", icon };
+  if (parts[0] === "c" && parts[1] && parts[2]) return { view: "service", category: parts[1], service: parts[2], icon };
+  if (parts[0] === "c" && parts[1]) return { view: "category", category: parts[1], icon };
+  return { view: "home", icon };
 }
 
-function routeHash(route: Route): string {
+function routePath(route: Route): string {
   if (route.view === "groups") return "#/groups";
   if (route.view === "category") return `#/c/${route.category}`;
   if (route.view === "service") return `#/c/${route.category}/${route.service}`;
   return "#/";
+}
+
+function routeHash(route: Route): string {
+  return route.icon ? `${routePath(route)}?icon=${encodeURIComponent(route.icon)}` : routePath(route);
 }
 
 function initialTheme(): "light" | "dark" {
@@ -51,7 +61,6 @@ export function App() {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [route, setRoute] = useState<Route>(parseHash);
   const [query, setQuery] = useState("");
-  const [selected, setSelected] = useState<CatalogIcon | null>(null);
   const [theme, setTheme] = useState<"light" | "dark">(initialTheme);
 
   useEffect(() => {
@@ -77,21 +86,32 @@ export function App() {
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
 
+  // Scroll is keyed on the page path only: opening or closing the export
+  // panel changes the hash but must not move the page.
+  const pathOnly = routePath(route);
   useEffect(() => {
-    const target = pushedNavigation.current ? 0 : (scrollPositions.current.get(routeHash(route)) ?? 0);
+    const target = pushedNavigation.current ? 0 : (scrollPositions.current.get(pathOnly) ?? 0);
     pushedNavigation.current = false;
     requestAnimationFrame(() => window.scrollTo({ top: target }));
-  }, [route]);
+  }, [pathOnly]);
 
   const navigate = useCallback((next: Route) => {
-    scrollPositions.current.set(window.location.hash || "#/", window.scrollY);
+    scrollPositions.current.set((window.location.hash || "#/").split("?")[0], window.scrollY);
     pushedNavigation.current = true;
     window.location.hash = routeHash(next);
     setQuery("");
   }, []);
 
+  // Open/close the export panel by rewriting only the ?icon part of the hash,
+  // keeping the page, search query, and scroll position intact.
+  const selectIcon = useCallback((icon: CatalogIcon | null) => {
+    const base = (window.location.hash || "#/").split("?")[0];
+    window.location.hash = icon ? `${base}?icon=${encodeURIComponent(icon.id)}` : base;
+  }, []);
+
   const index = useMemo(() => (catalog ? buildIndex(catalog) : null), [catalog]);
   const results = useMemo(() => (index && query.trim().length >= 2 ? searchIcons(index, query) : null), [index, query]);
+  const selected = route.icon && index ? (index.iconById.get(route.icon) ?? null) : null;
 
   if (loadError) {
     return (
@@ -119,13 +139,13 @@ export function App() {
         {!index ? (
           <SkeletonGrid />
         ) : results ? (
-          <SearchResults index={index} results={results} query={query} selected={selected} onSelect={setSelected} />
+          <SearchResults index={index} results={results} query={query} selected={selected} onSelect={selectIcon} />
         ) : route.view === "home" ? (
-          <HomeView index={index} onNavigate={navigate} selected={selected} onSelect={setSelected} />
+          <HomeView index={index} onNavigate={navigate} selected={selected} onSelect={selectIcon} />
         ) : route.view === "groups" ? (
-          <GroupsView index={index} onNavigate={navigate} selected={selected} onSelect={setSelected} />
+          <GroupsView index={index} onNavigate={navigate} selected={selected} onSelect={selectIcon} />
         ) : route.view === "category" ? (
-          <CategoryView index={index} category={route.category} onNavigate={navigate} selected={selected} onSelect={setSelected} />
+          <CategoryView index={index} category={route.category} onNavigate={navigate} selected={selected} onSelect={selectIcon} />
         ) : (
           <ServiceView
             index={index}
@@ -133,7 +153,7 @@ export function App() {
             service={route.service}
             onNavigate={navigate}
             selected={selected}
-            onSelect={setSelected}
+            onSelect={selectIcon}
           />
         )}
 
@@ -151,7 +171,7 @@ export function App() {
         </footer>
       ) : null}
 
-      {selected && index ? <DetailPanel icon={selected} index={index} baseUrl={BASE} onClose={() => setSelected(null)} /> : null}
+      {selected && index ? <DetailPanel icon={selected} index={index} baseUrl={BASE} onClose={() => selectIcon(null)} /> : null}
     </div>
     </ThemeContext.Provider>
   );
@@ -181,7 +201,7 @@ function HomeView({ index, onNavigate, onSelect }: ViewProps) {
       <section aria-label="Categories">
         <div className="section-head">
           <h2 className="section-title">Browse by category</h2>
-          <BulkDownload icons={index.catalog.icons} archiveName="aws-icons-all" baseUrl={BASE} label="Download everything" />
+          <BulkDownload icons={index.catalog.icons} archiveName="aws-icons-all" baseUrl={BASE} />
         </div>
         <div className="icon-grid">
           {mainCategories.map((category) => {
@@ -281,16 +301,19 @@ function GroupsView({ index, onNavigate, selected, onSelect }: ViewProps) {
           <h1>Group shapes</h1>
           <p className="section-note">{plural(index.groups.length, "container outline")} for VPCs, subnets, accounts, and regions</p>
         </div>
-        <div className="view-head-actions">
-          <BulkDownload icons={index.groups} archiveName="aws-icons-groups" baseUrl={BASE} />
-        </div>
       </section>
 
-      <div className="icon-grid">
-        {index.groups.map((icon) => (
-          <IconTile key={icon.id} icon={icon} baseUrl={BASE} selected={selected?.id === icon.id} onSelect={onSelect} />
-        ))}
-      </div>
+      <section aria-label="Group shapes">
+        <div className="section-head">
+          <h2 className="section-title">Shapes</h2>
+          <BulkDownload icons={index.groups} archiveName="aws-icons-groups" baseUrl={BASE} />
+        </div>
+        <div className="icon-grid">
+          {index.groups.map((icon) => (
+            <IconTile key={icon.id} icon={icon} baseUrl={BASE} selected={selected?.id === icon.id} onSelect={onSelect} />
+          ))}
+        </div>
+      </section>
     </>
   );
 }
@@ -326,14 +349,14 @@ function CategoryView({ index, category, onNavigate, selected, onSelect }: ViewP
             {resourceCount > 0 ? ` · ${plural(resourceCount, "resource")}` : ""}
           </p>
         </div>
-        <div className="view-head-actions">
-          <BulkDownload icons={allCategoryIcons} archiveName={`aws-icons-${category}`} baseUrl={BASE} />
-        </div>
       </section>
 
       {services.length > 0 ? (
         <section aria-label="Services">
-          <h2 className="section-title">Services</h2>
+          <div className="section-head">
+            <h2 className="section-title">Services</h2>
+            <BulkDownload icons={allCategoryIcons} archiveName={`aws-icons-${category}`} baseUrl={BASE} />
+          </div>
           <div className="icon-grid">
             {services.map((icon) => {
               const resourceCount = index.resourcesByService.get(icon.slug)?.length ?? 0;
@@ -355,7 +378,12 @@ function CategoryView({ index, category, onNavigate, selected, onSelect }: ViewP
 
       {loose.length > 0 ? (
         <section aria-label="Category resources">
-          <h2 className="section-title">{category === "general-icons" ? "General resources" : "Other resources"}</h2>
+          <div className="section-head">
+            <h2 className="section-title">{category === "general-icons" ? "General resources" : "Other resources"}</h2>
+            {services.length === 0 ? (
+              <BulkDownload icons={allCategoryIcons} archiveName={`aws-icons-${category}`} baseUrl={BASE} />
+            ) : null}
+          </div>
           <div className="icon-grid">
             {loose.map((icon) => (
               <IconTile key={icon.id} icon={icon} baseUrl={BASE} selected={selected?.id === icon.id} onSelect={onSelect} />
@@ -427,17 +455,17 @@ function ServiceView({
           <h1>{serviceIcon?.name ?? service}</h1>
           <p className="section-note">{plural(resources.length, "resource")}</p>
         </div>
-        <div className="view-head-actions">
+      </section>
+
+      <section aria-label="Resources">
+        <div className="section-head">
+          <h2 className="section-title">Resources</h2>
           <BulkDownload
             icons={[...(serviceIcon ? [serviceIcon] : []), ...resources]}
             archiveName={`aws-icons-${service}`}
             baseUrl={BASE}
           />
         </div>
-      </section>
-
-      <section aria-label="Resources">
-        <h2 className="section-title">Resources</h2>
         <div className="icon-grid">
           {resources.map((icon) => (
             <IconTile key={icon.id} icon={icon} baseUrl={BASE} selected={selected?.id === icon.id} onSelect={onSelect} />

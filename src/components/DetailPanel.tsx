@@ -42,10 +42,12 @@ export function DetailPanel({ icon, index, baseUrl, onClose }: DetailPanelProps)
       if (event.key === "Escape") onClose();
     };
     window.addEventListener("keydown", onKey);
-    document.body.style.overflow = "hidden";
+    // Lock scroll on the root element: its scrollbar-gutter stays reserved,
+    // so opening the panel causes no layout shift.
+    document.documentElement.style.overflow = "hidden";
     return () => {
       window.removeEventListener("keydown", onKey);
-      document.body.style.overflow = "";
+      document.documentElement.style.overflow = "";
     };
   }, [onClose]);
 
