@@ -144,6 +144,7 @@ export function App() {
             Official AWS Architecture Icons · released {formatDate(index.catalog.source.releaseDate)} · refreshed{" "}
             {formatDate(index.catalog.generatedAt)}
           </span>
+          <span>Not affiliated with or maintained by AWS · built by and for the community</span>
           <a href={index.catalog.source.pageUrl} target="_blank" rel="noreferrer">
             aws.amazon.com/architecture/icons
           </a>
