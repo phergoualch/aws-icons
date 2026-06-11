@@ -136,19 +136,19 @@ export function App() {
           />
         )}
 
-        {index ? (
-          <footer className="footer">
-            <p>
-              Official AWS Architecture Icons, release {formatDate(index.catalog.source.releaseDate)}; catalog refreshed{" "}
-              {formatDate(index.catalog.generatedAt)} from{" "}
-              <a href={index.catalog.source.pageUrl} target="_blank" rel="noreferrer">
-                aws.amazon.com/architecture/icons
-              </a>
-              . Icons are AWS trademarks; follow the AWS usage guidelines.
-            </p>
-          </footer>
-        ) : null}
       </main>
+
+      {index ? (
+        <footer className="footer">
+          <span>
+            Official AWS Architecture Icons · released {formatDate(index.catalog.source.releaseDate)} · refreshed{" "}
+            {formatDate(index.catalog.generatedAt)}
+          </span>
+          <a href={index.catalog.source.pageUrl} target="_blank" rel="noreferrer">
+            aws.amazon.com/architecture/icons
+          </a>
+        </footer>
+      ) : null}
 
       {selected && index ? <DetailPanel icon={selected} index={index} baseUrl={BASE} onClose={() => setSelected(null)} /> : null}
     </div>
@@ -309,7 +309,7 @@ function CategoryView({ index, category, onNavigate, selected, onSelect }: ViewP
       {services.length > 0 ? (
         <section aria-label="Services">
           <h2 className="section-title">Services</h2>
-          <div className="icon-grid">
+          <div className="icon-grid icon-grid--services">
             {services.map((icon) => {
               const resourceCount = index.resourcesByService.get(icon.slug)?.length ?? 0;
               return (
