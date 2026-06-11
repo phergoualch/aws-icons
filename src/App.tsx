@@ -428,20 +428,14 @@ function ServiceView({
         </div>
       </section>
 
-      <div className="icon-grid">
-        {serviceIcon ? (
-          <IconTile
-            icon={serviceIcon}
-            baseUrl={BASE}
-            subtitle="service icon"
-            selected={selected?.id === serviceIcon.id}
-            onSelect={onSelect}
-          />
-        ) : null}
-        {resources.map((icon) => (
-          <IconTile key={icon.id} icon={icon} baseUrl={BASE} selected={selected?.id === icon.id} onSelect={onSelect} />
-        ))}
-      </div>
+      <section aria-label="Resources">
+        <h2 className="section-title">Resources</h2>
+        <div className="icon-grid">
+          {resources.map((icon) => (
+            <IconTile key={icon.id} icon={icon} baseUrl={BASE} selected={selected?.id === icon.id} onSelect={onSelect} />
+          ))}
+        </div>
+      </section>
     </>
   );
 }
