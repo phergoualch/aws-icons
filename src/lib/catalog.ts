@@ -28,9 +28,15 @@ export interface Catalog {
   icons: CatalogIcon[];
 }
 
+/** URL-safe icon reference: dashes instead of the colon separators in ids. */
+export function iconUrlId(icon: CatalogIcon): string {
+  return icon.id.replaceAll(":", "-");
+}
+
 export interface CatalogIndex {
   catalog: Catalog;
   iconById: Map<string, CatalogIcon>;
+  iconByUrlId: Map<string, CatalogIcon>;
   categoryName: Map<string, string>;
   categoryIcon: Map<string, CatalogIcon>;
   servicesByCategory: Map<string, CatalogIcon[]>;
@@ -91,6 +97,7 @@ export function buildIndex(catalog: Catalog): CatalogIndex {
   return {
     catalog,
     iconById: new Map(catalog.icons.map((icon) => [icon.id, icon])),
+    iconByUrlId: new Map(catalog.icons.map((icon) => [iconUrlId(icon), icon])),
     categoryName,
     categoryIcon,
     servicesByCategory,

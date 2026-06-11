@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Check, Copy, Download, X } from "lucide-react";
+import { Check, Copy, Download, Link2, X } from "lucide-react";
 import type { CatalogIcon, CatalogIndex } from "../lib/catalog";
 import {
   PNG_SIZES,
@@ -28,6 +28,7 @@ export function DetailPanel({ icon, index, baseUrl, onClose }: DetailPanelProps)
   const [ground, setGround] = useState<"light" | "dark">(theme);
   const [variant, setVariant] = useState<"light" | "dark">(theme);
   const [feedback, setFeedback] = useState<Feedback>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const asset = variant === "dark" && icon.assetDark ? icon.assetDark : icon.asset;
   const assetUrl = `${baseUrl}${asset}`;
@@ -111,18 +112,42 @@ export function DetailPanel({ icon, index, baseUrl, onClose }: DetailPanelProps)
             {serviceLabel && serviceLabel !== icon.name ? <span>{serviceLabel}</span> : null}
           </p>
         </div>
-        <button type="button" className="icon-button" onClick={onClose} aria-label="Close panel">
-          <X size={16} aria-hidden />
-        </button>
+        <div className="panel-head-actions">
+          <button
+            type="button"
+            className="icon-button"
+            aria-label="Copy link to this icon"
+            title="Copy link to this icon"
+            onClick={async () => {
+              try {
+                await copyText(window.location.href);
+                setLinkCopied(true);
+                setTimeout(() => setLinkCopied(false), 1600);
+              } catch {
+                /* clipboard unavailable; the address bar has the same link */
+              }
+            }}
+          >
+            {linkCopied ? <Check size={16} aria-hidden /> : <Link2 size={16} aria-hidden />}
+          </button>
+          <button type="button" className="icon-button" onClick={onClose} aria-label="Close panel">
+            <X size={16} aria-hidden />
+          </button>
+        </div>
       </header>
 
       <div className={`panel-preview panel-preview--${ground}`}>
-        <img key={assetUrl} src={assetUrl} alt={`${icon.name} icon preview`} style={{ width: 200, height: 200 }} />
-      </div>
-
-      <div className="panel-row">
-        <span className="panel-label">Preview on</span>
-        <div className="seg" role="group" aria-label="Preview background">
+        <img
+          key={assetUrl}
+          src={assetUrl}
+          alt={`${icon.name} icon preview`}
+          style={{ width: 200, height: 200 }}
+          ref={(el) => {
+            if (el?.complete) el.classList.add("is-loaded");
+          }}
+          onLoad={(event) => event.currentTarget.classList.add("is-loaded")}
+        />
+        <div className="seg panel-ground" role="group" aria-label="Preview background">
           {(["light", "dark"] as const).map((g) => (
             <button key={g} type="button" className={`seg-item${ground === g ? " seg-item--on" : ""}`} onClick={() => setGround(g)}>
               {g}

@@ -8,6 +8,7 @@ import { BulkDownload } from "./components/BulkDownload";
 import {
   buildIndex,
   formatDate,
+  iconUrlId,
   loadCatalog,
   searchIcons,
   type Catalog,
@@ -32,22 +33,44 @@ type Route = (
 function parseHash(): Route {
   const [path, params] = window.location.hash.split("?");
   const icon = new URLSearchParams(params).get("icon") ?? undefined;
-  const parts = path.replace(/^#\/?/, "").split("/").filter(Boolean).map(decodeURIComponent);
+  let parts = path.replace(/^#\/?/, "").split("/").filter(Boolean).map(decodeURIComponent);
+  if (parts[0] === "c") parts = parts.slice(1); // legacy #/c/<category> links
   if (parts[0] === "groups") return { view: "groups", icon };
-  if (parts[0] === "c" && parts[1] && parts[2]) return { view: "service", category: parts[1], service: parts[2], icon };
-  if (parts[0] === "c" && parts[1]) return { view: "category", category: parts[1], icon };
+  if (parts.length >= 2) return { view: "service", category: parts[0], service: parts[1], icon };
+  if (parts.length === 1) return { view: "category", category: parts[0], icon };
   return { view: "home", icon };
 }
 
 function routePath(route: Route): string {
   if (route.view === "groups") return "#/groups";
-  if (route.view === "category") return `#/c/${route.category}`;
-  if (route.view === "service") return `#/c/${route.category}/${route.service}`;
+  if (route.view === "category") return `#/${route.category}`;
+  if (route.view === "service") return `#/${route.category}/${route.service}`;
   return "#/";
 }
 
 function routeHash(route: Route): string {
   return route.icon ? `${routePath(route)}?icon=${encodeURIComponent(route.icon)}` : routePath(route);
+}
+
+/* Archive layouts mirror the browsing hierarchy at each scope. */
+
+// Within one service: service icon at the root, resources in resources/.
+function zipPathInService(icon: CatalogIcon): string {
+  return icon.kind === "service" ? icon.slug : `resources/${icon.slug}`;
+}
+
+// Within one category: category icon at the root, a folder per service.
+function zipPathInCategory(icon: CatalogIcon): string {
+  if (icon.kind === "category") return icon.slug;
+  if (icon.kind === "resource" && icon.service) return `${icon.service}/${zipPathInService(icon)}`;
+  if (icon.kind === "resource") return `resources/${icon.slug}`;
+  return `${icon.slug}/${zipPathInService(icon)}`;
+}
+
+// Whole catalog: a folder per category, plus groups/.
+function zipPathInAll(icon: CatalogIcon): string {
+  if (icon.kind === "group") return `groups/${icon.slug}`;
+  return `${icon.category ?? "misc"}/${zipPathInCategory(icon)}`;
 }
 
 function initialTheme(): "light" | "dark" {
@@ -106,12 +129,13 @@ export function App() {
   // keeping the page, search query, and scroll position intact.
   const selectIcon = useCallback((icon: CatalogIcon | null) => {
     const base = (window.location.hash || "#/").split("?")[0];
-    window.location.hash = icon ? `${base}?icon=${encodeURIComponent(icon.id)}` : base;
+    window.location.hash = icon ? `${base}?icon=${iconUrlId(icon)}` : base;
   }, []);
 
   const index = useMemo(() => (catalog ? buildIndex(catalog) : null), [catalog]);
   const results = useMemo(() => (index && query.trim().length >= 2 ? searchIcons(index, query) : null), [index, query]);
-  const selected = route.icon && index ? (index.iconById.get(route.icon) ?? null) : null;
+  // Accept both the dash form and raw ids (legacy links with %3A separators).
+  const selected = route.icon && index ? (index.iconByUrlId.get(route.icon) ?? index.iconById.get(route.icon) ?? null) : null;
 
   if (loadError) {
     return (
@@ -201,7 +225,7 @@ function HomeView({ index, onNavigate, onSelect }: ViewProps) {
       <section aria-label="Categories">
         <div className="section-head">
           <h2 className="section-title">Browse by category</h2>
-          <BulkDownload icons={index.catalog.icons} archiveName="aws-icons-all" baseUrl={BASE} />
+          <BulkDownload icons={index.catalog.icons} archiveName="aws-icons-all" baseUrl={BASE} pathFor={zipPathInAll} />
         </div>
         <div className="icon-grid">
           {mainCategories.map((category) => {
@@ -306,7 +330,7 @@ function GroupsView({ index, onNavigate, selected, onSelect }: ViewProps) {
       <section aria-label="Group shapes">
         <div className="section-head">
           <h2 className="section-title">Shapes</h2>
-          <BulkDownload icons={index.groups} archiveName="aws-icons-groups" baseUrl={BASE} />
+          <BulkDownload icons={index.groups} archiveName="aws-icons-groups" baseUrl={BASE} pathFor={(icon) => icon.slug} />
         </div>
         <div className="icon-grid">
           {index.groups.map((icon) => (
@@ -355,7 +379,7 @@ function CategoryView({ index, category, onNavigate, selected, onSelect }: ViewP
         <section aria-label="Services">
           <div className="section-head">
             <h2 className="section-title">Services</h2>
-            <BulkDownload icons={allCategoryIcons} archiveName={`aws-icons-${category}`} baseUrl={BASE} />
+            <BulkDownload icons={allCategoryIcons} archiveName={`aws-icons-${category}`} baseUrl={BASE} pathFor={zipPathInCategory} />
           </div>
           <div className="icon-grid">
             {services.map((icon) => {
@@ -381,7 +405,7 @@ function CategoryView({ index, category, onNavigate, selected, onSelect }: ViewP
           <div className="section-head">
             <h2 className="section-title">{category === "general-icons" ? "General resources" : "Other resources"}</h2>
             {services.length === 0 ? (
-              <BulkDownload icons={allCategoryIcons} archiveName={`aws-icons-${category}`} baseUrl={BASE} />
+              <BulkDownload icons={allCategoryIcons} archiveName={`aws-icons-${category}`} baseUrl={BASE} pathFor={zipPathInCategory} />
             ) : null}
           </div>
           <div className="icon-grid">
@@ -464,6 +488,7 @@ function ServiceView({
             icons={[...(serviceIcon ? [serviceIcon] : []), ...resources]}
             archiveName={`aws-icons-${service}`}
             baseUrl={BASE}
+            pathFor={zipPathInService}
           />
         </div>
         <div className="icon-grid">

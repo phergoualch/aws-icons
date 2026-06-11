@@ -10,11 +10,13 @@ interface BulkDownloadProps {
   archiveName: string;
   baseUrl: string;
   label?: string;
+  /** Archive path (without extension) for each icon, mirroring the browsing hierarchy. */
+  pathFor: (icon: CatalogIcon) => string;
 }
 
 type Phase = { state: "idle" } | { state: "working"; done: number } | { state: "error" };
 
-export function BulkDownload({ icons, archiveName, baseUrl, label = "Download all" }: BulkDownloadProps) {
+export function BulkDownload({ icons, archiveName, baseUrl, label = "Download all", pathFor }: BulkDownloadProps) {
   const [open, setOpen] = useState(false);
   const [format, setFormat] = useState<"svg" | "png">("svg");
   const [size, setSize] = useState<number>(64);
@@ -33,7 +35,7 @@ export function BulkDownload({ icons, archiveName, baseUrl, label = "Download al
     setPhase({ state: "working", done: 0 });
     try {
       const items: BulkItem[] = icons.map((icon) => ({
-        zipPath: icon.category ? `${icon.kind}s/${icon.category}/${icon.slug}` : `${icon.kind}s/${icon.slug}`,
+        zipPath: pathFor(icon),
         url: `${baseUrl}${icon.asset}`,
       }));
       const blob = await buildZip(items, format, size, (done) => setPhase({ state: "working", done }));

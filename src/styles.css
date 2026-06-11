@@ -548,12 +548,37 @@ section > .section-head + .icon-grid {
   color: var(--accent);
 }
 
+.panel-head-actions {
+  display: flex;
+  gap: 6px;
+}
+
 .panel-preview {
+  position: relative;
   display: grid;
   place-items: center;
   min-height: 240px;
   border-radius: var(--r-md);
   border: 1px solid var(--line);
+  transition: background 140ms ease-out;
+}
+
+/* the icon fades in once loaded instead of popping after the panel */
+.panel-preview img {
+  opacity: 0;
+  transition: opacity 160ms ease-out;
+}
+
+.panel-preview img.is-loaded {
+  opacity: 1;
+}
+
+/* ground toggle floats in the preview corner, on its own solid surface */
+.panel-ground {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  background: var(--surface);
 }
 
 .panel-preview--light {
