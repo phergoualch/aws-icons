@@ -37,9 +37,7 @@ export function Header({ query, onQueryChange, theme, onToggleTheme, generatedAt
             <rect x="12.9" y="12.9" width="4.6" height="4.6" rx="1.4" fill="var(--brand-ink)" />
           </svg>
         </span>
-        <span className="brand-name">
-          AWS Icons<span className="brand-dot"> Catalog</span>
-        </span>
+        <span className="brand-name">AWS Icons</span>
       </button>
 
       <div className="search">

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronRight, Group, Shapes } from "lucide-react";
 import { Header } from "./components/Header";
 import { IconTile } from "./components/IconTile";
@@ -64,16 +64,29 @@ export function App() {
     localStorage.setItem(THEME_KEY, theme);
   }, [theme]);
 
+  // Scroll is restored when navigating with browser back/forward: positions
+  // are remembered per hash, and programmatic navigation starts at the top.
+  const scrollPositions = useRef(new Map<string, number>());
+  const pushedNavigation = useRef(false);
+
   useEffect(() => {
+    if ("scrollRestoration" in history) history.scrollRestoration = "manual";
     const onHashChange = () => setRoute(parseHash());
     window.addEventListener("hashchange", onHashChange);
     return () => window.removeEventListener("hashchange", onHashChange);
   }, []);
 
+  useEffect(() => {
+    const target = pushedNavigation.current ? 0 : (scrollPositions.current.get(routeHash(route)) ?? 0);
+    pushedNavigation.current = false;
+    requestAnimationFrame(() => window.scrollTo({ top: target }));
+  }, [route]);
+
   const navigate = useCallback((next: Route) => {
+    scrollPositions.current.set(window.location.hash || "#/", window.scrollY);
+    pushedNavigation.current = true;
     window.location.hash = routeHash(next);
     setQuery("");
-    window.scrollTo({ top: 0 });
   }, []);
 
   const index = useMemo(() => (catalog ? buildIndex(catalog) : null), [catalog]);
@@ -164,13 +177,13 @@ function HomeView({ index, onNavigate }: ViewProps) {
           categories, refreshed weekly from the official AWS icon package. Download or copy any icon as SVG or PNG in the size you
           need; conversion happens in your browser.
         </p>
-        <div className="intro-actions">
-          <BulkDownload icons={index.catalog.icons} archiveName="aws-icons-all" baseUrl={BASE} label="Download everything" />
-        </div>
       </section>
 
       <section aria-label="Categories">
-        <h2 className="section-title">Browse by category</h2>
+        <div className="section-head">
+          <h2 className="section-title">Browse by category</h2>
+          <BulkDownload icons={index.catalog.icons} archiveName="aws-icons-all" baseUrl={BASE} label="Download everything" />
+        </div>
         <div className="category-grid">
           {mainCategories.map((category) => {
             const icon = index.categoryIcon.get(category.slug);
