@@ -115,7 +115,7 @@ export function DetailPanel({ icon, index, baseUrl, onClose }: DetailPanelProps)
       </header>
 
       <div className={`panel-preview panel-preview--${ground}`}>
-        <img key={assetUrl} src={assetUrl} alt={`${icon.name} icon preview`} style={{ width: Math.min(size, 220), height: Math.min(size, 220) }} />
+        <img key={assetUrl} src={assetUrl} alt={`${icon.name} icon preview`} style={{ width: 200, height: 200 }} />
       </div>
 
       <div className="panel-row">

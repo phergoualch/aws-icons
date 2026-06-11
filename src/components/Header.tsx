@@ -29,7 +29,7 @@ export function Header({ query, onQueryChange, theme, onToggleTheme, generatedAt
     <header className="header">
       <button type="button" className="brand" onClick={onHome}>
         <span className="brand-mark" aria-hidden>
-          <svg viewBox="0 0 24 24" width="22" height="22">
+          <svg viewBox="0 0 24 24" width="30" height="30">
             <rect x="2" y="2" width="20" height="20" rx="5" fill="var(--accent)" />
             <rect x="6.5" y="6.5" width="4.6" height="4.6" rx="1.4" fill="var(--accent-ink)" />
             <rect x="12.9" y="6.5" width="4.6" height="4.6" rx="1.4" fill="var(--accent-ink)" opacity="0.65" />

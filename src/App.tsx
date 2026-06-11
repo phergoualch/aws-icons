@@ -1,8 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { ChevronRight } from "lucide-react";
+import { ChevronRight, Group, Shapes } from "lucide-react";
 import { Header } from "./components/Header";
 import { IconTile } from "./components/IconTile";
 import { DetailPanel } from "./components/DetailPanel";
+import { BulkDownload } from "./components/BulkDownload";
 import {
   buildIndex,
   formatDate,
@@ -19,17 +20,20 @@ const THEME_KEY = "aws-icons-theme";
 
 type Route =
   | { view: "home" }
+  | { view: "groups" }
   | { view: "category"; category: string }
   | { view: "service"; category: string; service: string };
 
 function parseHash(): Route {
   const parts = window.location.hash.replace(/^#\/?/, "").split("/").filter(Boolean).map(decodeURIComponent);
+  if (parts[0] === "groups") return { view: "groups" };
   if (parts[0] === "c" && parts[1] && parts[2]) return { view: "service", category: parts[1], service: parts[2] };
   if (parts[0] === "c" && parts[1]) return { view: "category", category: parts[1] };
   return { view: "home" };
 }
 
 function routeHash(route: Route): string {
+  if (route.view === "groups") return "#/groups";
   if (route.view === "category") return `#/c/${route.category}`;
   if (route.view === "service") return `#/c/${route.category}/${route.service}`;
   return "#/";
@@ -105,6 +109,8 @@ export function App() {
           <SearchResults index={index} results={results} query={query} selected={selected} onSelect={setSelected} />
         ) : route.view === "home" ? (
           <HomeView index={index} onNavigate={navigate} selected={selected} onSelect={setSelected} />
+        ) : route.view === "groups" ? (
+          <GroupsView index={index} onNavigate={navigate} selected={selected} onSelect={setSelected} />
         ) : route.view === "category" ? (
           <CategoryView index={index} category={route.category} onNavigate={navigate} selected={selected} onSelect={setSelected} />
         ) : (
@@ -145,8 +151,10 @@ interface ViewProps {
   onSelect: (icon: CatalogIcon) => void;
 }
 
-function HomeView({ index, onNavigate, selected, onSelect }: ViewProps) {
+function HomeView({ index, onNavigate }: ViewProps) {
   const { counts } = index.catalog;
+  const mainCategories = index.catalog.categories.filter((c) => c.slug !== "general-icons");
+  const general = index.catalog.categories.find((c) => c.slug === "general-icons");
   return (
     <>
       <section className="intro">
@@ -156,12 +164,15 @@ function HomeView({ index, onNavigate, selected, onSelect }: ViewProps) {
           categories, refreshed weekly from the official AWS icon package. Download or copy any icon as SVG or PNG in the size you
           need; conversion happens in your browser.
         </p>
+        <div className="intro-actions">
+          <BulkDownload icons={index.catalog.icons} archiveName="aws-icons-all" baseUrl={BASE} label="Download everything" />
+        </div>
       </section>
 
       <section aria-label="Categories">
         <h2 className="section-title">Browse by category</h2>
         <div className="category-grid">
-          {index.catalog.categories.map((category) => {
+          {mainCategories.map((category) => {
             const icon = index.categoryIcon.get(category.slug);
             const services = index.servicesByCategory.get(category.slug)?.length ?? 0;
             const resources =
@@ -191,17 +202,57 @@ function HomeView({ index, onNavigate, selected, onSelect }: ViewProps) {
         </div>
       </section>
 
-      {index.groups.length > 0 ? (
-        <section aria-label="Group shapes">
-          <h2 className="section-title">Group shapes</h2>
-          <p className="section-note">Container outlines for VPCs, subnets, accounts, and regions.</p>
-          <div className="icon-grid">
-            {index.groups.map((icon) => (
-              <IconTile key={icon.id} icon={icon} baseUrl={BASE} selected={selected?.id === icon.id} onSelect={onSelect} />
-            ))}
-          </div>
-        </section>
-      ) : null}
+      <section aria-label="More icon sets">
+        <h2 className="section-title">More icon sets</h2>
+        <div className="category-grid">
+          {general ? (
+            <button type="button" className="category-card" onClick={() => onNavigate({ view: "category", category: "general-icons" })}>
+              <span className="category-glyph" aria-hidden>
+                <Shapes size={26} />
+              </span>
+              <span className="category-name">{general.name}</span>
+              <span className="category-count">
+                Clients, servers, documents, and other generic diagram resources
+              </span>
+            </button>
+          ) : null}
+          {index.groups.length > 0 ? (
+            <button type="button" className="category-card" onClick={() => onNavigate({ view: "groups" })}>
+              <span className="category-glyph" aria-hidden>
+                <Group size={26} />
+              </span>
+              <span className="category-name">Group shapes</span>
+              <span className="category-count">Container outlines for VPCs, subnets, accounts, and regions</span>
+            </button>
+          ) : null}
+        </div>
+      </section>
+    </>
+  );
+}
+
+function GroupsView({ index, onNavigate, selected, onSelect }: ViewProps) {
+  return (
+    <>
+      <Breadcrumb onNavigate={onNavigate} trail={[{ label: "Group shapes" }]} />
+      <section className="view-head">
+        <div>
+          <h1>Group shapes</h1>
+          <p className="section-note">
+            Container outlines for VPCs, subnets, accounts, and regions; drawn as frames around other icons in architecture
+            diagrams.
+          </p>
+        </div>
+        <div className="view-head-actions">
+          <BulkDownload icons={index.groups} archiveName="aws-icons-groups" baseUrl={BASE} />
+        </div>
+      </section>
+
+      <div className="icon-grid">
+        {index.groups.map((icon) => (
+          <IconTile key={icon.id} icon={icon} baseUrl={BASE} selected={selected?.id === icon.id} onSelect={onSelect} />
+        ))}
+      </div>
     </>
   );
 }
@@ -211,12 +262,21 @@ function CategoryView({ index, category, onNavigate, selected, onSelect }: ViewP
   const categoryIcon = index.categoryIcon.get(category);
   const services = index.servicesByCategory.get(category) ?? [];
   const loose = index.looseResourcesByCategory.get(category) ?? [];
+  const allCategoryIcons = useMemo(
+    () => [
+      ...(categoryIcon ? [categoryIcon] : []),
+      ...services,
+      ...services.flatMap((svc) => index.resourcesByService.get(svc.slug) ?? []),
+      ...loose,
+    ],
+    [categoryIcon, services, loose, index]
+  );
 
   return (
     <>
       <Breadcrumb onNavigate={onNavigate} trail={[{ label: name }]} />
       <section className="view-head">
-        {categoryIcon ? <img src={`${BASE}${categoryIcon.asset}`} alt="" width={44} height={44} /> : null}
+        {categoryIcon ? <img src={`${BASE}${categoryIcon.asset}`} alt="" width={48} height={48} /> : null}
         <div>
           <h1>{name}</h1>
           <p className="section-note">
@@ -224,6 +284,9 @@ function CategoryView({ index, category, onNavigate, selected, onSelect }: ViewP
             {loose.length > 0 ? `, ${plural(loose.length, "category-level resource")}` : ""}. Select a service to see its
             resource icons.
           </p>
+        </div>
+        <div className="view-head-actions">
+          <BulkDownload icons={allCategoryIcons} archiveName={`aws-icons-${category}`} baseUrl={BASE} />
         </div>
       </section>
 
@@ -338,10 +401,17 @@ function ServiceView({
         ]}
       />
       <section className="view-head">
-        {serviceIcon ? <img src={`${BASE}${serviceIcon.asset}`} alt="" width={44} height={44} /> : null}
+        {serviceIcon ? <img src={`${BASE}${serviceIcon.asset}`} alt="" width={48} height={48} /> : null}
         <div>
           <h1>{serviceIcon?.name ?? service}</h1>
           <p className="section-note">Service icon plus {plural(resources.length, "resource icon")}.</p>
+        </div>
+        <div className="view-head-actions">
+          <BulkDownload
+            icons={[...(serviceIcon ? [serviceIcon] : []), ...resources]}
+            archiveName={`aws-icons-${service}`}
+            baseUrl={BASE}
+          />
         </div>
       </section>
 

@@ -1,7 +1,7 @@
 /** Client-side SVG sizing and PNG rasterization. The repo stores one SVG per
  * icon; every size and format users download is produced here. */
 
-export const PNG_SIZES = [16, 32, 48, 64, 128, 256, 512] as const;
+export const PNG_SIZES = [32, 64, 128, 256, 512] as const;
 
 export async function fetchSvgText(url: string): Promise<string> {
   const response = await fetch(url);
@@ -71,4 +71,50 @@ export async function copyPng(blob: Blob): Promise<void> {
 
 export function exportFilename(slug: string, size: number | null, extension: "svg" | "png"): string {
   return size ? `${slug}_${size}.${extension}` : `${slug}.${extension}`;
+}
+
+export interface BulkItem {
+  /** Path of the file inside the ZIP, without extension. */
+  zipPath: string;
+  /** URL of the source SVG. */
+  url: string;
+}
+
+/**
+ * Fetch every item's SVG, convert to the requested format/size, and return a
+ * ZIP blob. Conversion runs in small parallel batches; progress is reported
+ * as completed item count.
+ */
+export async function buildZip(
+  items: BulkItem[],
+  format: "svg" | "png",
+  size: number,
+  onProgress: (done: number) => void
+): Promise<Blob> {
+  const { zipSync } = await import("fflate");
+  const encoder = new TextEncoder();
+  const files: Record<string, Uint8Array> = {};
+  let done = 0;
+
+  const BATCH = 8;
+  for (let i = 0; i < items.length; i += BATCH) {
+    await Promise.all(
+      items.slice(i, i + BATCH).map(async (item) => {
+        const text = await fetchSvgText(item.url);
+        const name = `${item.zipPath}_${size}.${format}`;
+        if (format === "svg") {
+          files[name] = encoder.encode(resizeSvg(text, size));
+        } else {
+          const blob = await svgToPngBlob(text, size);
+          files[name] = new Uint8Array(await blob.arrayBuffer());
+        }
+        onProgress(++done);
+      })
+    );
+  }
+
+  // PNGs are already compressed; only SVG text benefits from deflate.
+  const zipped = zipSync(files, { level: format === "svg" ? 6 : 0 });
+  const bytes = new Uint8Array(zipped);
+  return new Blob([bytes.buffer as ArrayBuffer], { type: "application/zip" });
 }
