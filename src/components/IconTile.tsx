@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Check, Copy, Download } from "lucide-react";
+import { Check, ChevronRight, Copy, Download } from "lucide-react";
 import type { CatalogIcon } from "../lib/catalog";
 import { copyText, downloadBlob, exportFilename, fetchSvgText } from "../lib/exporter";
 import { useTheme } from "../lib/theme";
+import { GrabIcon } from "./GrabIcon";
 
 interface IconTileProps {
   icon: CatalogIcon;
@@ -10,15 +11,18 @@ interface IconTileProps {
   subtitle?: string;
   selected: boolean;
   onSelect: (icon: CatalogIcon) => void;
+  /** Card click action; defaults to opening the export panel. The icon itself always grabs. */
+  onOpen?: () => void;
 }
 
-export function IconTile({ icon, baseUrl, subtitle, selected, onSelect }: IconTileProps) {
+export function IconTile({ icon, baseUrl, subtitle, selected, onSelect, onOpen }: IconTileProps) {
   const theme = useTheme();
   const [copied, setCopied] = useState(false);
   // Icons with theme variants (dark-stroke line art) are invisible on the
   // opposite ground; preview the variant that matches the current theme.
   const asset = theme === "dark" && icon.assetDark ? icon.assetDark : icon.asset;
   const assetUrl = `${baseUrl}${asset}`;
+  const open = onOpen ?? (() => onSelect(icon));
 
   const handleCopySvg = async (event: React.MouseEvent) => {
     event.stopPropagation();
@@ -43,21 +47,22 @@ export function IconTile({ icon, baseUrl, subtitle, selected, onSelect }: IconTi
       role="button"
       tabIndex={0}
       aria-pressed={selected}
-      onClick={() => onSelect(icon)}
+      onClick={open}
       onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
+        if ((event.key === "Enter" || event.key === " ") && event.target === event.currentTarget) {
           event.preventDefault();
-          onSelect(icon);
+          open();
         }
       }}
     >
       <span className="tile-well">
-        <img src={assetUrl} alt="" loading="lazy" width={48} height={48} />
+        <GrabIcon icon={icon} assetUrl={assetUrl} size={64} onSelect={onSelect} />
       </span>
       <span className="tile-meta">
         <span className="tile-name">{icon.name}</span>
         {subtitle ? <span className="tile-sub">{subtitle}</span> : null}
       </span>
+      <ChevronRight size={16} className="tile-chevron" aria-hidden />
       <span className="tile-actions">
         <button
           type="button"

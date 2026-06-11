@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ChevronRight, Group, Shapes } from "lucide-react";
 import { Header } from "./components/Header";
+import { GrabIcon } from "./components/GrabIcon";
 import { IconTile } from "./components/IconTile";
 import { DetailPanel } from "./components/DetailPanel";
 import { BulkDownload } from "./components/BulkDownload";
@@ -163,7 +164,7 @@ interface ViewProps {
   onSelect: (icon: CatalogIcon) => void;
 }
 
-function HomeView({ index, onNavigate }: ViewProps) {
+function HomeView({ index, onNavigate, onSelect }: ViewProps) {
   const { counts } = index.catalog;
   const mainCategories = index.catalog.categories.filter((c) => c.slug !== "general-icons");
   const general = index.catalog.categories.find((c) => c.slug === "general-icons");
@@ -192,22 +193,33 @@ function HomeView({ index, onNavigate }: ViewProps) {
                 (sum, svc) => sum + (index.resourcesByService.get(svc.slug)?.length ?? 0),
                 0
               );
+            const go = () => onNavigate({ view: "category", category: category.slug });
             return (
-              <button
+              <div
                 key={category.slug}
-                type="button"
                 className="category-card"
-                onClick={() => onNavigate({ view: "category", category: category.slug })}
+                role="button"
+                tabIndex={0}
+                onClick={go}
+                onKeyDown={(event) => {
+                  if ((event.key === "Enter" || event.key === " ") && event.target === event.currentTarget) {
+                    event.preventDefault();
+                    go();
+                  }
+                }}
               >
-                {icon ? <img src={`${BASE}${icon.asset}`} alt="" width={40} height={40} loading="lazy" /> : null}
-                <span className="category-name">{category.name}</span>
-                <span className="category-count">
-                  {services > 0 ? plural(services, "service") : ""}
-                  {services > 0 && resources > 0 ? " · " : ""}
-                  {resources > 0 ? plural(resources, "resource") : ""}
-                  {services === 0 && resources === 0 ? "category icon" : ""}
+                {icon ? <GrabIcon icon={icon} assetUrl={`${BASE}${icon.asset}`} size={52} onSelect={onSelect} /> : null}
+                <span className="category-text">
+                  <span className="category-name">{category.name}</span>
+                  <span className="category-count">
+                    {services > 0 ? plural(services, "service") : ""}
+                    {services > 0 && resources > 0 ? " · " : ""}
+                    {resources > 0 ? plural(resources, "resource") : ""}
+                    {services === 0 && resources === 0 ? "Category icon only" : ""}
+                  </span>
                 </span>
-              </button>
+                <ChevronRight size={16} className="category-chevron" aria-hidden />
+              </div>
             );
           })}
         </div>
@@ -221,8 +233,11 @@ function HomeView({ index, onNavigate }: ViewProps) {
               <span className="category-glyph" aria-hidden>
                 <Shapes size={26} />
               </span>
-              <span className="category-name">{general.name}</span>
-              <span className="category-count">Clients, servers, users, documents</span>
+              <span className="category-text">
+                <span className="category-name">{general.name}</span>
+                <span className="category-count">Clients, servers, users, documents</span>
+              </span>
+              <ChevronRight size={16} className="category-chevron" aria-hidden />
             </button>
           ) : null}
           {index.groups.length > 0 ? (
@@ -230,8 +245,11 @@ function HomeView({ index, onNavigate }: ViewProps) {
               <span className="category-glyph" aria-hidden>
                 <Group size={26} />
               </span>
-              <span className="category-name">Group shapes</span>
-              <span className="category-count">VPC, subnet, account, region outlines</span>
+              <span className="category-text">
+                <span className="category-name">Group shapes</span>
+                <span className="category-count">VPC, subnet, account, region outlines</span>
+              </span>
+              <ChevronRight size={16} className="category-chevron" aria-hidden />
             </button>
           ) : null}
         </div>
@@ -285,14 +303,7 @@ function CategoryView({ index, category, onNavigate, selected, onSelect }: ViewP
       <Breadcrumb onNavigate={onNavigate} trail={[{ label: name }]} />
       <section className="view-head">
         {categoryIcon ? (
-          <button
-            type="button"
-            className="view-head-icon"
-            title="Export the category icon"
-            onClick={() => onSelect(categoryIcon)}
-          >
-            <img src={`${BASE}${categoryIcon.asset}`} alt={`${name} category icon`} width={56} height={56} />
-          </button>
+          <GrabIcon icon={categoryIcon} assetUrl={`${BASE}${categoryIcon.asset}`} size={56} onSelect={onSelect} />
         ) : null}
         <div>
           <h1>{name}</h1>
@@ -309,7 +320,7 @@ function CategoryView({ index, category, onNavigate, selected, onSelect }: ViewP
       {services.length > 0 ? (
         <section aria-label="Services">
           <h2 className="section-title">Services</h2>
-          <div className="icon-grid icon-grid--services">
+          <div className="icon-grid">
             {services.map((icon) => {
               const resourceCount = index.resourcesByService.get(icon.slug)?.length ?? 0;
               return (
@@ -362,24 +373,14 @@ function ServiceTile({
   onSelect: (icon: CatalogIcon) => void;
 }) {
   return (
-    <div className="service-cell">
-      <IconTile
-        icon={icon}
-        baseUrl={BASE}
-        subtitle={resourceCount > 0 ? plural(resourceCount, "resource") : undefined}
-        selected={selected}
-        onSelect={onSelect}
-      />
-      {resourceCount > 0 ? (
-        <button
-          type="button"
-          className="service-more"
-          onClick={() => onNavigate({ view: "service", category, service: icon.slug })}
-        >
-          View resources <ChevronRight size={13} aria-hidden />
-        </button>
-      ) : null}
-    </div>
+    <IconTile
+      icon={icon}
+      baseUrl={BASE}
+      subtitle={resourceCount > 0 ? plural(resourceCount, "resource") : undefined}
+      selected={selected}
+      onSelect={onSelect}
+      onOpen={resourceCount > 0 ? () => onNavigate({ view: "service", category, service: icon.slug }) : undefined}
+    />
   );
 }
 
@@ -406,14 +407,7 @@ function ServiceView({
       />
       <section className="view-head">
         {serviceIcon ? (
-          <button
-            type="button"
-            className="view-head-icon"
-            title="Export the service icon"
-            onClick={() => onSelect(serviceIcon)}
-          >
-            <img src={`${BASE}${serviceIcon.asset}`} alt={`${serviceIcon.name} service icon`} width={56} height={56} />
-          </button>
+          <GrabIcon icon={serviceIcon} assetUrl={`${BASE}${serviceIcon.asset}`} size={56} onSelect={onSelect} />
         ) : null}
         <div>
           <h1>{serviceIcon?.name ?? service}</h1>

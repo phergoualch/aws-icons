@@ -279,17 +279,17 @@ section > .section-note + .icon-grid {
 .category-grid {
   margin-top: 16px;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   grid-auto-rows: 1fr;
   gap: 14px;
 }
 
 .category-card {
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 12px;
-  padding: 20px;
+  align-items: center;
+  gap: 16px;
+  padding: 16px 18px;
+  cursor: pointer;
   text-align: left;
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
@@ -303,19 +303,29 @@ section > .section-note + .icon-grid {
 }
 
 .category-card img {
-  width: 48px;
-  height: 48px;
+  width: 52px;
+  height: 52px;
+  flex-shrink: 0;
 }
 
 /* stand-in glyph for icon sets without an official category icon */
 .category-glyph {
   display: grid;
   place-items: center;
-  width: 48px;
-  height: 48px;
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
   border-radius: var(--r-sm);
   border: 1px dashed var(--line);
   color: var(--muted);
+}
+
+.category-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
 }
 
 .category-name {
@@ -327,6 +337,25 @@ section > .section-note + .icon-grid {
 .category-count {
   font-size: 13.5px;
   color: var(--muted);
+}
+
+.category-chevron {
+  flex-shrink: 0;
+  color: var(--muted);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 140ms ease-out, transform 140ms ease-out;
+}
+
+.category-card:hover .category-chevron {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .category-chevron {
+    transform: none;
+  }
 }
 
 /* ---------- Icon grid & tiles ---------- */
@@ -397,6 +426,27 @@ section > .section-note + .icon-grid {
   color: var(--muted);
 }
 
+.tile-chevron {
+  margin-left: auto;
+  flex-shrink: 0;
+  color: var(--muted);
+  opacity: 0;
+  transform: translateX(-4px);
+  transition: opacity 140ms ease-out, transform 140ms ease-out;
+}
+
+.tile:hover .tile-chevron,
+.tile:focus-within .tile-chevron {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tile-chevron {
+    transform: none;
+  }
+}
+
 .tile-actions {
   position: absolute;
   top: 6px;
@@ -427,44 +477,54 @@ section > .section-note + .icon-grid {
   border-color: var(--accent);
 }
 
-/* service cell: the drill-down link hangs below the card, outside its box,
-   so every card in the grid keeps the same measured size */
-.service-cell {
+/* the uniform "grab this icon" affordance: every official icon is a button
+   that opens the export panel; hover reveals a download badge */
+.icon-grab {
   position: relative;
-  display: flex;
-}
-
-.service-cell .tile {
-  flex: 1;
-}
-
-.service-more {
-  position: absolute;
-  top: 100%;
-  left: 6px;
-}
-
-/* extra row gap reserves space for the hanging links */
-.icon-grid--services {
-  row-gap: 42px;
-}
-
-.service-more {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+  padding: 0;
   border: 0;
   background: none;
-  color: var(--accent);
-  font-size: 13px;
-  font-weight: 600;
-  padding: 4px;
   border-radius: var(--r-sm);
-  white-space: nowrap;
+  transition: transform 140ms ease-out;
 }
 
-.service-more:hover {
-  text-decoration: underline;
+.icon-grab:hover {
+  transform: scale(1.05);
+}
+
+.icon-grab-badge {
+  position: absolute;
+  right: -7px;
+  bottom: -7px;
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--brand);
+  color: var(--brand-ink);
+  opacity: 0;
+  transform: scale(0.8);
+  transition: opacity 120ms ease-out, transform 120ms ease-out;
+}
+
+.icon-grab:hover .icon-grab-badge,
+.icon-grab:focus-visible .icon-grab-badge {
+  opacity: 1;
+  transform: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .icon-grab:hover {
+    transform: none;
+  }
+
+  .icon-grab-badge {
+    transform: none;
+  }
 }
 
 /* ---------- Views ---------- */
@@ -506,21 +566,6 @@ section > .section-note + .icon-grid {
 
 .view-head-actions {
   margin-left: auto;
-}
-
-/* clickable category/service icon in the page header */
-.view-head-icon {
-  display: grid;
-  place-items: center;
-  padding: 0;
-  border: 0;
-  background: none;
-  border-radius: var(--r-sm);
-  transition: transform 140ms ease-out;
-}
-
-.view-head-icon:hover {
-  transform: scale(1.06);
 }
 
 .view-head h1 {
