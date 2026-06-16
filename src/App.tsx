@@ -126,14 +126,23 @@ export function App() {
   }, []);
 
   // Open/close the export panel by rewriting only the ?icon part of the hash,
-  // keeping the page, search query, and scroll position intact. This replaces
-  // the history entry rather than pushing one, so Back never lands on an open
-  // panel — it steps straight between category/service/resource pages.
+  // keeping the page, search query, and scroll position intact. Opening pushes
+  // a history entry tagged as a panel, so Back closes the panel; closing pops
+  // that entry so we never leave a stale "panel" stop behind that Back could
+  // reopen. (pushState/back fire no hashchange when only the query changes, so
+  // we sync the route ourselves.)
   const selectIcon = useCallback((icon: CatalogIcon | null) => {
     const base = (window.location.hash || "#/").split("?")[0];
-    const hash = icon ? `${base}?icon=${iconUrlId(icon)}` : base;
-    history.replaceState(null, "", hash);
-    setRoute(parseHash()); // replaceState skips the hashchange event
+    if (icon) {
+      history.pushState({ panel: true }, "", `${base}?icon=${iconUrlId(icon)}`);
+      setRoute(parseHash());
+    } else if (history.state?.panel) {
+      history.back(); // pop the entry we pushed; popstate syncs the route
+    } else {
+      // Opened straight from a shared ?icon link: nothing to go back to.
+      history.replaceState(null, "", base);
+      setRoute(parseHash());
+    }
   }, []);
 
   const index = useMemo(() => (catalog ? buildIndex(catalog) : null), [catalog]);
