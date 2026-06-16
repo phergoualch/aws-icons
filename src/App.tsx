@@ -126,10 +126,14 @@ export function App() {
   }, []);
 
   // Open/close the export panel by rewriting only the ?icon part of the hash,
-  // keeping the page, search query, and scroll position intact.
+  // keeping the page, search query, and scroll position intact. This replaces
+  // the history entry rather than pushing one, so Back never lands on an open
+  // panel — it steps straight between category/service/resource pages.
   const selectIcon = useCallback((icon: CatalogIcon | null) => {
     const base = (window.location.hash || "#/").split("?")[0];
-    window.location.hash = icon ? `${base}?icon=${iconUrlId(icon)}` : base;
+    const hash = icon ? `${base}?icon=${iconUrlId(icon)}` : base;
+    history.replaceState(null, "", hash);
+    setRoute(parseHash()); // replaceState skips the hashchange event
   }, []);
 
   const index = useMemo(() => (catalog ? buildIndex(catalog) : null), [catalog]);
